@@ -1,0 +1,555 @@
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:#faf8ff}
+
+.wrap{padding:1.5rem 0}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,#5b21b6 0%,#7c3aed 50%,#a855f7 100%);
+  border-radius:20px;padding:2rem 1.75rem 1.6rem;margin-bottom:1.25rem;
+  position:relative;overflow:hidden;
+  box-shadow:0 8px 32px rgba(124,58,237,.30)
+}
+/* lavender flower petals decoration */
+.hero::before{
+  content:'🌸';position:absolute;top:-10px;right:10px;
+  font-size:80px;opacity:.18;transform:rotate(-20deg);line-height:1
+}
+.hero::after{
+  content:'🌿';position:absolute;bottom:-8px;right:55px;
+  font-size:50px;opacity:.15;transform:rotate(10deg);line-height:1
+}
+/* extra petal blob */
+.hero-blob{
+  position:absolute;top:-50px;left:-30px;
+  width:160px;height:160px;border-radius:50%;
+  background:rgba(196,167,255,.15)
+}
+.hero-blob2{
+  position:absolute;bottom:-40px;right:-20px;
+  width:120px;height:120px;border-radius:50%;
+  background:rgba(233,213,255,.12)
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.18);backdrop-filter:blur(8px);
+  color:#f3e8ff;font-size:11px;font-weight:600;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 12px;border-radius:20px;
+  margin-bottom:14px;border:1px solid rgba(255,255,255,.25)
+}
+.hero h1{font-size:22px;font-weight:700;color:#fff;line-height:1.3;margin-bottom:8px;position:relative;text-shadow:0 1px 8px rgba(91,33,182,.3)}
+.hero p{font-size:13px;color:#ddd6fe;position:relative;line-height:1.5}
+
+/* ── DROP ZONE ── */
+.drop-zone{
+  border:2px dashed #c4b5fd;border-radius:16px;
+  padding:2rem 1.5rem;text-align:center;cursor:pointer;
+  transition:all .25s;background:linear-gradient(145deg,#faf8ff,#f5f0ff);
+  position:relative;margin-bottom:1rem;
+  box-shadow:inset 0 1px 3px rgba(139,92,246,.08)
+}
+.drop-zone:hover,.drop-zone.over{
+  border-color:#8b5cf6;background:linear-gradient(145deg,#f3e8ff,#ede9fe);
+  box-shadow:0 4px 16px rgba(139,92,246,.15)
+}
+.drop-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.drop-icon{
+  width:56px;height:56px;
+  background:linear-gradient(135deg,#ede9fe,#ddd6fe);
+  border-radius:16px;display:flex;align-items:center;justify-content:center;
+  margin:0 auto 12px;font-size:26px;
+  box-shadow:0 2px 8px rgba(139,92,246,.2)
+}
+.drop-title{font-size:15px;font-weight:700;color:#5b21b6;margin-bottom:4px}
+.drop-sub{font-size:12px;color:#a78bfa}
+
+/* ── FILE BAR ── */
+.file-bar{
+  display:none;background:#fff;
+  border:1.5px solid #ddd6fe;border-radius:14px;
+  padding:.875rem 1.25rem;margin-bottom:1rem;
+  align-items:center;gap:12px;
+  box-shadow:0 2px 8px rgba(139,92,246,.08)
+}
+.file-bar.show{display:flex}
+.f-ico{width:38px;height:38px;border-radius:10px;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.f-name{font-size:13px;font-weight:600;color:#5b21b6}
+.f-meta{font-size:11px;color:#a1a1aa;margin-top:2px}
+.f-x{
+  margin-left:auto;width:26px;height:26px;border-radius:50%;
+  background:#f3e8ff;border:none;cursor:pointer;font-size:12px;
+  color:#8b5cf6;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s
+}
+.f-x:hover{background:#ddd6fe}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1rem}
+.stat{
+  background:#fff;border:1.5px solid #ede9fe;border-radius:14px;padding:14px 16px;
+  box-shadow:0 2px 8px rgba(139,92,246,.07)
+}
+.stat-n{font-size:26px;font-weight:700;background:linear-gradient(135deg,#7c3aed,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.stat-l{font-size:11px;color:#a1a1aa;margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+
+/* ── PREVIEW ── */
+.preview-section{display:none;margin-bottom:1rem}
+.preview-section.show{display:block}
+.sec-label{font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+
+.legend{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:12px;color:#6b7280}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+.tbl-wrap{border:1.5px solid #ede9fe;border-radius:14px;overflow:hidden;box-shadow:0 2px 12px rgba(139,92,246,.1)}
+.ptbl{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
+.ptbl thead tr{background:linear-gradient(90deg,#6d28d9,#8b5cf6)}
+.ptbl th{color:#fff;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:11px 12px;text-align:left}
+.ptbl td{padding:10px 12px;border-bottom:1px solid #f3e8ff;vertical-align:middle}
+.ptbl tr:last-child td{border-bottom:none}
+.ptbl tr:nth-child(odd) td{background:#faf8ff}
+.ptbl tr:nth-child(even) td{background:#fff}
+.han{font-size:18px;font-weight:700;color:#5b21b6;letter-spacing:.05em}
+.han-hidden{font-size:18px;font-weight:700;color:transparent;text-shadow:0 0 8px rgba(139,92,246,.4);letter-spacing:.05em}
+.pin{font-size:12px;color:#7c3aed;font-style:italic}
+.inp-demo{
+  background:#fef9c3;border:1.5px dashed #d97706;
+  border-radius:6px;padding:3px 10px;font-size:12px;color:#b45309;display:inline-block
+}
+.badge-ok{display:inline-flex;align-items:center;gap:4px;background:#f0fdf4;color:#166534;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600}
+.badge-err{display:inline-flex;align-items:center;gap:4px;background:#fff1f2;color:#be123c;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600}
+.dot-g{width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0}
+.dot-r{width:7px;height:7px;border-radius:50%;background:#f43f5e;flex-shrink:0}
+
+/* ── TOGGLE ROW ── */
+.toggle-row{
+  display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,#fdf4ff,#fae8ff);
+  border:1.5px solid #e9d5ff;border-radius:12px;
+  padding:10px 14px;margin-bottom:1rem;
+  font-size:13px;color:#7e22ce;font-weight:500
+}
+.toggle{position:relative;width:42px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider-t{position:absolute;inset:0;background:#d8b4fe;border-radius:24px;cursor:pointer;transition:.3s}
+.slider-t::before{content:'';position:absolute;height:18px;width:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 4px rgba(109,40,217,.3)}
+.toggle input:checked+.slider-t{background:linear-gradient(135deg,#7c3aed,#a855f7)}
+.toggle input:checked+.slider-t::before{transform:translateX(18px)}
+
+/* ── CONVERT BUTTON ── */
+.btn-convert{
+  display:none;width:100%;padding:15px;font-size:15px;font-weight:700;
+  background:linear-gradient(135deg,#6d28d9,#8b5cf6,#a855f7);
+  color:#fff;border:none;border-radius:14px;cursor:pointer;
+  letter-spacing:.03em;transition:all .2s;margin-bottom:1rem;
+  box-shadow:0 4px 16px rgba(109,40,217,.4);
+  position:relative;overflow:hidden
+}
+.btn-convert::before{
+  content:'🌸';position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  font-size:18px;opacity:.7
+}
+.btn-convert:hover{opacity:.9;box-shadow:0 6px 24px rgba(109,40,217,.5);transform:translateY(-1px)}
+.btn-convert:active{transform:translateY(0)}
+.btn-convert:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-convert.show{display:block}
+
+/* ── PROGRESS ── */
+.prog-wrap{display:none;margin-bottom:1rem}
+.prog-wrap.show{display:block}
+.prog-header{display:flex;justify-content:space-between;margin-bottom:6px}
+.prog-label{font-size:13px;font-weight:600;color:#6d28d9}
+.prog-pct{font-size:13px;color:#a78bfa;font-weight:600}
+.prog-bg{height:8px;background:#ede9fe;border-radius:8px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#c084fc);border-radius:8px;width:0%;transition:width .1s}
+
+/* ── DOWNLOAD CARD ── */
+.dl-card{
+  display:none;background:#fff;
+  border:2px solid #d8b4fe;border-radius:16px;
+  padding:1.5rem;margin-bottom:1rem;text-align:center;
+  box-shadow:0 4px 24px rgba(139,92,246,.15)
+}
+.dl-card.show{display:block}
+.dl-check{
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#ede9fe,#ddd6fe);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 12px;font-size:26px;
+  box-shadow:0 2px 12px rgba(139,92,246,.2)
+}
+.dl-title{font-size:16px;font-weight:700;color:#5b21b6;margin-bottom:4px}
+.dl-meta{font-size:12px;color:#a1a1aa;margin-bottom:16px}
+.dl-btn{
+  display:inline-flex;align-items:center;gap:8px;padding:12px 32px;
+  background:linear-gradient(135deg,#6d28d9,#9333ea);
+  color:#fff;border-radius:12px;font-size:14px;font-weight:700;
+  cursor:pointer;border:none;transition:all .2s;
+  box-shadow:0 4px 14px rgba(109,40,217,.35)
+}
+.dl-btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 6px 20px rgba(109,40,217,.45)}
+
+/* ── ERROR ── */
+.err{display:none;background:#fff1f2;border:1.5px solid #fda4af;color:#be123c;border-radius:12px;padding:10px 14px;font-size:13px;margin-bottom:1rem}
+.err.show{display:block}
+</style>
+
+<div class="wrap">
+
+<div class="hero">
+  <div class="hero-blob"></div>
+  <div class="hero-blob2"></div>
+  <div class="hero-tag">🌸 HSK Converter</div>
+  <h1>Tạo bảng luyện tập<br>từ vựng tiếng Trung</h1>
+  <p>Upload file Excel HSK → xuất file luyện tập có màu đầy đủ</p>
+</div>
+
+<div class="drop-zone" id="dz">
+  <input type="file" id="fi" accept=".xlsx,.xls">
+  <div class="drop-icon">📂</div>
+  <div class="drop-title">Kéo thả file vào đây</div>
+  <div class="drop-sub">hoặc click để chọn · hỗ trợ HSK 1 → 6</div>
+</div>
+
+<div class="file-bar" id="fb">
+  <div class="f-ico">📊</div>
+  <div style="flex:1;min-width:0">
+    <div class="f-name" id="fn" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+    <div class="f-meta" id="fm"></div>
+  </div>
+  <button class="f-x" id="fx">✕</button>
+</div>
+
+<div id="statsRow" style="display:none">
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="sw">—</div><div class="stat-l">Từ vựng</div></div>
+    <div class="stat"><div class="stat-n" id="sf">—</div><div class="stat-l">Đã fix lỗi</div></div>
+    <div class="stat"><div class="stat-n" id="sl">—</div><div class="stat-l">Cấp độ</div></div>
+  </div>
+</div>
+
+<div class="preview-section" id="pw">
+  <div class="toggle-row">
+    <label class="toggle"><input type="checkbox" id="tog"><span class="slider-t"></span></label>
+    <span id="tog-label">Xem trước khi ẩn từ — bật để xem khi gõ đúng / sai</span>
+  </div>
+  <div class="legend">
+    <div class="leg-item"><div class="leg-dot" style="background:#7c3aed"></div> Từ mới (ẩn)</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#22c55e"></div> Gõ đúng → hiện xanh</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f43f5e"></div> Gõ sai → đỏ nhạt</div>
+    <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div> Ô luyện tập</div>
+  </div>
+  <div class="sec-label">Xem trước 5 từ đầu</div>
+  <div class="tbl-wrap">
+    <table class="ptbl">
+      <thead><tr><th style="width:36px">#</th><th style="width:90px">Từ mới</th><th>Luyện tập</th><th style="width:100px">Kiểm tra</th><th style="width:85px">Phiên âm</th></tr></thead>
+      <tbody id="pb"></tbody>
+    </table>
+  </div>
+</div>
+
+<button class="btn-convert" id="bc">Tạo file luyện tập →</button>
+
+<div class="prog-wrap" id="pg">
+  <div class="prog-header">
+    <span class="prog-label" id="pt">Đang xử lý...</span>
+    <span class="prog-pct" id="pp">0%</span>
+  </div>
+  <div class="prog-bg"><div class="prog-fill" id="pf"></div></div>
+</div>
+
+<div class="dl-card" id="dc">
+  <div class="dl-check">🌸</div>
+  <div class="dl-title">File đã sẵn sàng!</div>
+  <div class="dl-meta" id="ds"></div>
+  <button class="dl-btn" id="db">⬇ Tải về</button>
+</div>
+
+<div class="err" id="em"></div>
+
+</div>
+
+<script>
+let parsed=null,blob=null,outName='';
+const $=id=>document.getElementById(id);
+const dz=$('dz'),fi=$('fi');
+
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('over')});
+dz.addEventListener('dragleave',()=>dz.classList.remove('over'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
+fi.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0])});
+$('fx').addEventListener('click',reset);
+$('bc').addEventListener('click',doConvert);
+$('db').addEventListener('click',()=>{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=outName;a.click()});
+
+$('tog').addEventListener('change',function(){
+  renderPreview(this.checked);
+  $('tog-label').textContent=this.checked?'Đang xem trạng thái gõ đúng / sai':'Bật để xem khi gõ đúng / sai';
+});
+
+function reset(){
+  parsed=null;blob=null;fi.value='';
+  $('fb').classList.remove('show');
+  $('pw').classList.remove('show');
+  $('bc').classList.remove('show');
+  $('pg').classList.remove('show');
+  $('dc').classList.remove('show');
+  $('em').classList.remove('show');
+  $('statsRow').style.display='none';
+  $('pb').innerHTML='';
+  $('tog').checked=false;
+}
+
+function showErr(msg){$('em').textContent=msg;$('em').classList.add('show')}
+
+function handleFile(file){
+  reset();
+  if(!file.name.match(/\.xlsx?$/i)){showErr('Chỉ hỗ trợ file .xlsx');return}
+  $('fn').textContent=file.name;
+  $('fm').textContent=(file.size/1024).toFixed(1)+' KB';
+  $('fb').classList.add('show');
+  const r=new FileReader();
+  r.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      parseData(rows,file.name);
+    }catch(ex){showErr('Lỗi đọc file: '+ex.message)}
+  };
+  r.readAsArrayBuffer(file);
+}
+
+function parseData(rows,fname){
+  let fixCount=0,level='';
+  const title=String(rows[0]?rows[0][0]||'':'');
+  const m=title.match(/HSK\s*(\d+)/i);
+  if(m)level=m[1];
+  const data=[];
+  for(let i=3;i<rows.length;i++){
+    const r=rows[i];
+    if(!r[0]||isNaN(Number(r[0])))continue;
+    const raw=String(r[1]||''),clean=raw.trim();
+    if(!clean||clean==='nan')continue;
+    if(raw!==clean)fixCount++;
+    data.push({stt:Number(r[0]),han:clean,pinyin:String(r[2]||'').trim(),nghia:String(r[4]||'').replace(/\n\n/g,'; ').replace(/\n/g,'; ').trim(),viDu:String(r[5]||'').split('\n')[0].trim()});
+  }
+  if(!data.length){showErr('Không tìm thấy dữ liệu.');return}
+  parsed={data,level,fixCount};
+  outName=fname.replace(/\.xlsx?$/i,'')+'_LuyenTap.xlsx';
+  $('sw').textContent=data.length;
+  $('sf').textContent=fixCount;
+  $('sl').textContent=level?'HSK '+level:'?';
+  $('statsRow').style.display='block';
+  renderPreview(false);
+  $('pw').classList.add('show');
+  $('bc').classList.add('show');
+}
+
+function renderPreview(showResult){
+  const pb=$('pb');
+  pb.innerHTML='';
+  if(!parsed)return;
+  parsed.data.slice(0,5).forEach((d,i)=>{
+    const tr=document.createElement('tr');
+    let hanCell,checkCell;
+    if(showResult){
+      const correct=i%2===0;
+      hanCell=correct
+        ?`<td><span style="font-size:18px;font-weight:700;color:#166534;background:#f0fdf4;padding:2px 8px;border-radius:6px">${d.han}</span></td>`
+        :`<td><span style="font-size:18px;font-weight:700;color:#be123c;background:#fff1f2;padding:2px 8px;border-radius:6px">${d.han}</span></td>`;
+      checkCell=correct
+        ?`<td><span class="badge-ok"><span class="dot-g"></span>Giỏi quá!</span></td>`
+        :`<td><span class="badge-err"><span class="dot-r"></span>Sai rồi!</span></td>`;
+    } else {
+      hanCell=`<td><span class="han-hidden">${d.han}</span></td>`;
+      checkCell=`<td style="color:#bbb;font-size:12px">— chưa gõ —</td>`;
+    }
+    tr.innerHTML=`<td style="color:#9E9E9E;font-size:12px;font-weight:600">${d.stt}</td>${hanCell}<td><span class="inp-demo">gõ vào đây...</span></td>${checkCell}<td class="pin">${d.pinyin}</td>`;
+    pb.appendChild(tr);
+  });
+}
+
+function prog(pct,txt){
+  $('pf').style.width=pct+'%';
+  $('pt').textContent=txt;
+  $('pp').textContent=Math.round(pct)+'%';
+}
+
+function doConvert(){
+  if(!parsed)return;
+  $('bc').disabled=true;
+  $('pg').classList.add('show');
+  $('dc').classList.remove('show');
+  $('em').classList.remove('show');
+  prog(3,'Đang khởi tạo...');
+  setTimeout(buildFile,60);
+}
+
+function buildFile(){
+  try{
+    const{data,level}=parsed;
+    const total=data.length;
+    const sheetName=(level?'HSK '+level:'HSK')+' - Luyện Tập';
+
+    prog(10,'Đang tạo styles...');
+
+    const stylesXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="12">
+<font><sz val="11"/><name val="Calibri"/></font>
+<font><b/><sz val="12"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
+<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Arial"/></font>
+<font><sz val="10"/><color rgb="FF546E7A"/><name val="Arial"/></font>
+<font><b/><sz val="14"/><color rgb="FFE8EAF6"/><name val="SimSun"/><charset val="134"/></font>
+<font><b/><sz val="14"/><color rgb="FFFFFFFF"/><name val="SimSun"/><charset val="134"/></font>
+<font><sz val="13"/><name val="SimSun"/><charset val="134"/></font>
+<font><b/><sz val="10"/><name val="Arial"/></font>
+<font><i/><sz val="10"/><color rgb="FF00695C"/><name val="Arial"/></font>
+<font><sz val="10"/><color rgb="FF37474F"/><name val="Arial"/></font>
+<font><sz val="11"/><color rgb="FF4527A0"/><name val="SimSun"/><charset val="134"/></font>
+<font><i/><sz val="9"/><color rgb="FF6D4C41"/><name val="Arial"/></font>
+</fonts>
+<fills count="9">
+<fill><patternFill patternType="none"/></fill>
+<fill><patternFill patternType="gray125"/></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF1A237E"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FF283593"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFE8EAF6"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFFFFFF"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFFFDE7"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFFFF8E1"/></patternFill></fill>
+<fill><patternFill patternType="solid"><fgColor rgb="FFC8E6C9"/></patternFill></fill>
+</fills>
+<borders count="2">
+<border><left/><right/><top/><bottom/><diagonal/></border>
+<border><left style="thin"><color rgb="FF9FA8DA"/></left><right style="thin"><color rgb="FF9FA8DA"/></right><top style="thin"><color rgb="FF9FA8DA"/></top><bottom style="thin"><color rgb="FF9FA8DA"/></bottom><diagonal/></border>
+</borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="16">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="3" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="3" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="4" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="7" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="7" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="8" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="8" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="9" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="9" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="10" fillId="4" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="10" fillId="5" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" wrapText="1"/></xf>
+</cellXfs>
+<dxfs count="2">
+<dxf><font><name val="SimSun"/><charset val="134"/><b val="1"/><color rgb="FF1B5E20"/><sz val="14"/></font><fill><patternFill><fgColor rgb="FFC8E6C9"/></patternFill></fill></dxf>
+<dxf><font><name val="SimSun"/><charset val="134"/><b val="1"/><color rgb="FFFFCDD2"/><sz val="14"/></font><fill><patternFill><fgColor rgb="FFFFCDD2"/></patternFill></fill></dxf>
+</dxfs>
+</styleSheet>`;
+
+    prog(20,'Đang tạo dữ liệu...');
+
+    const strings=[];
+    const sIdx={};
+    function si(s){s=String(s);if(sIdx[s]===undefined){sIdx[s]=strings.length;strings.push(s)}return sIdx[s]}
+
+    const COLS=['A','B','C','D','E','F','G'];
+    const COL_WIDTHS=[6,16,18,22,16,35,30];
+
+    function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+    si('📚 BẢNG LUYỆN TẬP TỪ VỰNG HSK '+(level||'')+'  |  💡 Gõ từ vào cột Luyện Tập — Gõ đúng thì Từ Mới tự hiện!');
+    ['STT','Từ Mới (ẩn)','Luyện Tập','Kiểm Tra','Phiên Âm','Giải Thích Ý Nghĩa','Ví Dụ (Chữ Hán)'].forEach(h=>si(h));
+    si('');
+    si('💡 Gõ từ Hán vào cột Luyện Tập → Gõ đúng thì Từ Mới tự hiện xanh | Click ô Từ Mới → xem thanh công thức để gợi ý');
+    data.forEach(d=>{si(d.han);si(d.pinyin);si(d.nghia);si(d.viDu)});
+
+    let rows_xml='';
+
+    const titleSi=sIdx['📚 BẢNG LUYỆN TẬP TỪ VỰNG HSK '+(level||'')+'  |  💡 Gõ từ vào cột Luyện Tập — Gõ đúng thì Từ Mới tự hiện!'];
+    rows_xml+=`<row r="1" ht="30" customHeight="1"><c r="A1" t="s" s="1"><v>${titleSi}</v></c></row>`;
+
+    const hdrLabels=['STT','Từ Mới (ẩn)','Luyện Tập','Kiểm Tra','Phiên Âm','Giải Thích Ý Nghĩa','Ví Dụ (Chữ Hán)'];
+    rows_xml+=`<row r="2" ht="32" customHeight="1">`;
+    hdrLabels.forEach((h,i)=>{rows_xml+=`<c r="${COLS[i]}2" t="s" s="2"><v>${sIdx[h]}</v></c>`});
+    rows_xml+=`</row>`;
+
+    let chunk='';
+    data.forEach((d,i)=>{
+      const r=i+3;
+      const alt=i%2===0;
+      const sA=alt?3:4,sH=alt?5:6,sI=7,sF=alt?8:9,sP=alt?10:11,sN=alt?12:13,sV=alt?14:15;
+      chunk+=`<row r="${r}" ht="22" customHeight="1">`;
+      chunk+=`<c r="A${r}" t="n" s="${sA}"><v>${d.stt}</v></c>`;
+      chunk+=`<c r="B${r}" t="s" s="${sH}"><v>${sIdx[d.han]}</v></c>`;
+      chunk+=`<c r="C${r}" t="s" s="${sI}"><v>${sIdx['']}</v></c>`;
+      chunk+=`<c r="D${r}" t="str" s="${sF}"><f>${esc('IF(C'+r+'="","",IF(EXACT(C'+r+',B'+r+'),"✅ Giỏi quá!","❌ Sai rồi thử lại nhé"))')}</f><v></v></c>`;
+      chunk+=`<c r="E${r}" t="s" s="${sP}"><v>${sIdx[d.pinyin]}</v></c>`;
+      chunk+=`<c r="F${r}" t="s" s="${sN}"><v>${sIdx[d.nghia]}</v></c>`;
+      chunk+=`<c r="G${r}" t="s" s="${Math.min(sV,15)}"><v>${sIdx[d.viDu]}</v></c>`;
+      chunk+=`</row>`;
+      if(i%200===199){rows_xml+=chunk;chunk='';prog(20+Math.round(i/total*60),'Đang xử lý từ '+(i+1)+'/'+total+'...')}
+    });
+    rows_xml+=chunk;
+
+    const footerR=total+3;
+    const footSi=sIdx['💡 Gõ từ Hán vào cột Luyện Tập → Gõ đúng thì Từ Mới tự hiện xanh | Click ô Từ Mới → xem thanh công thức để gợi ý'];
+    rows_xml+=`<row r="${footerR}" ht="18" customHeight="1"><c r="A${footerR}" t="s" s="11"><v>${footSi}</v></c></row>`;
+
+    prog(82,'Đang tạo XML...');
+
+    const colsXml=COL_WIDTHS.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('');
+    const cfLast=total+2;
+    const cfXml=`<conditionalFormatting sqref="B3:B${cfLast}"><cfRule type="expression" dxfId="0" priority="1" stopIfTrue="1"><formula>EXACT(C3,B3)</formula></cfRule><cfRule type="expression" dxfId="1" priority="2"><formula>AND(C3&lt;&gt;"",NOT(EXACT(C3,B3)))</formula></cfRule></conditionalFormatting>`;
+    const mergeXml=`<mergeCells count="2"><mergeCell ref="A1:G1"/><mergeCell ref="A${footerR}:G${footerR}"/></mergeCells>`;
+
+    const sheetXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="2" topLeftCell="A3" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${colsXml}</cols><sheetData>${rows_xml}</sheetData>${mergeXml}${cfXml}</worksheet>`;
+
+    const ssXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${strings.length}" uniqueCount="${strings.length}">${strings.map(s=>`<si><t xml:space="preserve">${esc(s)}</t></si>`).join('')}</sst>`;
+
+    const safeSheet=esc(sheetName);
+    const wbXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="${safeSheet}" sheetId="1" r:id="rId1"/></sheets></workbook>`;
+    const wbRels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+    const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+    const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+
+    prog(90,'Đang nén file...');
+
+    const zip=new JSZip();
+    zip.file('[Content_Types].xml',ct);
+    zip.file('_rels/.rels',rels);
+    zip.file('xl/workbook.xml',wbXml);
+    zip.file('xl/_rels/workbook.xml.rels',wbRels);
+    zip.file('xl/worksheets/sheet1.xml',sheetXml);
+    zip.file('xl/sharedStrings.xml',ssXml);
+    zip.file('xl/styles.xml',stylesXml);
+
+    zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}}).then(b=>{
+      blob=b;
+      prog(100,'Hoàn thành!');
+      setTimeout(()=>{
+        $('pg').classList.remove('show');
+        $('dc').classList.add('show');
+        $('ds').textContent=total+' từ vựng · '+(b.size/1024).toFixed(1)+' KB';
+        $('bc').disabled=false;
+      },300);
+    });
+
+  }catch(ex){
+    $('em').textContent='Lỗi: '+ex.message;
+    $('em').classList.add('show');
+    $('bc').disabled=false;
+    $('pg').classList.remove('show');
+    console.error(ex);
+  }
+}
+</script>
